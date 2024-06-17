@@ -17,7 +17,7 @@ from pathlib import Path
 addon = True
 if addon:
     USER = Path(resource_path('USER'))
-    src = USER / "scripts/addons" / "Smear"
+    src = USER / "scripts/addons" / os.path.dirname(os.path.realpath(__file__))
 
     from . import deltas_generation_functions as deltagen
     from . import utils
