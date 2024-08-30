@@ -51,23 +51,25 @@ class Panel:
 class SmearControlPanel(Panel,bpy.types.Panel):
     bl_idname = "SmearControlPanel"
     bl_label = "Smear frame generation"
+    bl_category = "SMEAR"
 
     def draw(self,context):
         scene = context.scene
 
         col = self.layout.column()
 
-        isMesh = (not context.active_object is None) and context.active_object.type == "MESH"
+        obj = context.active_object
+        isMesh = (not obj is None) and obj.type == "MESH"
         col.enabled = isMesh
 
-        msg = f"Selected: {context.active_object.name}" if isMesh else "Select an animated mesh"
+        msg = f"Selected: {obj.name}" if isMesh else "Select an animated mesh"
         col.label(text=msg)
 
         fullBodyCheckbox = col.row()
         fullBodyCheckbox.enabled = False
 
         if isMesh:
-            for mod in context.active_object.modifiers:
+            for mod in obj.modifiers:
                 if mod.type == "ARMATURE":
                     fullBodyCheckbox.enabled = True
         fullBodyCheckbox.prop(scene, "fullBody")
@@ -83,6 +85,103 @@ class SmearControlPanel(Panel,bpy.types.Panel):
         col.prop(scene,"cameraPOV")
 
         col.operator(BakeDeltasTrajectoriesOperator.bl_idname)
+
+class EffectControlPanel(Panel,bpy.types.Panel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "SMEAR"
+
+    def draw(self, context):
+        scene = context.scene
+        col = self.layout.column()
+
+        obj = context.active_object
+        isMesh = (not obj is None) and obj.type == "MESH"
+        if isMesh and "Smear Control Panel" in obj.modifiers:
+            mod = obj.modifiers["Smear Control Panel"]
+
+            param = mod.node_group.interface.items_tree[self.activate_toggle.name]
+            property_name = f"[\"{param.identifier}\"]"
+            col.prop(data=mod, property=property_name, text=self.activate_toggle.name)
+
+            if mod[param.identifier]:
+                for gn_param in self.effect_parameters:
+                    param = mod.node_group.interface.items_tree[gn_param.name]
+                    property_name = f"[\"{param.identifier}" + ("_attribute_name" if gn_param.as_attribute else "") + "\"]"
+                    col.prop(data=mod, property=property_name, text=param.name)
+
+        else:
+            col.label(text="Select an animated mesh")
+            col.label(text="and run Bake Smears")
+
+class GN_parameter():
+    def __init__(self, name, as_attribute=False):
+        self.name = name
+        self.as_attribute = as_attribute
+
+class ElongatedInbetweensControlPanel(EffectControlPanel,bpy.types.Panel):
+    bl_idname = "ElongatedInbetweensControlPanel"
+    bl_label = "Elongated In-Betweens"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "SMEAR"
+
+    activate_toggle = GN_parameter("Activate Elongated")
+
+    effect_parameters = [
+            GN_parameter("Smear Length"),
+            GN_parameter("Smear Past Length"),
+            GN_parameter("Smear Future Length"),
+            GN_parameter("Weight by Speed"),
+            GN_parameter("Speed Factor"),
+            GN_parameter("Add Noise Pattern"),
+            GN_parameter("Noise Scale"),
+            GN_parameter("Manual Weights"),
+            GN_parameter("Manual Weights Group", as_attribute=True)
+        ]
+
+class MultipleInbetweensControlPanel(EffectControlPanel,bpy.types.Panel):
+    bl_idname = "MultipleInbetweensControlPanel"
+    bl_label = "Multiple In-Betweens"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "SMEAR"
+
+    activate_toggle = GN_parameter("Activate Multiples")
+
+    effect_parameters = [
+            GN_parameter("# Future Multiples"),
+            GN_parameter("# Past Multiples"),
+            GN_parameter("Future Opacity Factor"),
+            GN_parameter("Past Opacity Factor"),
+            GN_parameter("Future Displacement"),
+            GN_parameter("Past Displacement"),
+            GN_parameter("Overlap"),
+            GN_parameter("Number of Overlap"),
+            GN_parameter("Multiple Speed Threshold")
+        ]
+
+class MotionLinesControlPanel(EffectControlPanel,bpy.types.Panel):
+    bl_idname = "MotionLinesControlPanel"
+    bl_label = "Motion lines"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "SMEAR"
+
+    activate_toggle = GN_parameter("Activate Lines")
+
+    effect_parameters = [
+            GN_parameter("Lines Lengths"),
+            GN_parameter("Lines Offset"),
+            GN_parameter("Seed"),
+            GN_parameter("Probability"),
+            GN_parameter("Lines Speed threshold"),
+            GN_parameter("Radius"),
+            GN_parameter("Radius slope"),
+            GN_parameter("Line Material"),
+            GN_parameter("Lines Past Factor"),
+            GN_parameter("Lines Future Factor")
+        ]
 
 def clear_attributes(obj):
     attributes = obj.data.attributes
@@ -117,6 +216,10 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             filename="Delta_Visualization"
             bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
 
+            directory=str(src / "smear_frames_nodes.blend" / "Material")
+            filename="MultipleTransparency"
+            bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
+
             self.appended_files = True
 
         obj = bpy.context.active_object
@@ -127,10 +230,9 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             scale_delta = 1.0
             for mod in obj.modifiers:
                 if mod.type == "NODES" and not (mod.node_group is None) and mod.node_group.name == "Smear Frames Controler":
-                     for inp in mod.node_group.inputs:
-                        if inp.name == "Smear Length":
-                            scale_delta = mod[inp.identifier]
-                            mod[inp.identifier] = 0.0
+                    smear_length_identifier = mod.node_group.interface.items_tree["Smear Length"].identifier
+                    scale_delta = mod[smear_length_identifier]
+                    mod[smear_length_identifier] = 0.0
                 if mod.type == "ARMATURE":
                     armature = mod.object
 
@@ -201,6 +303,25 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
 
             set_node_tree(obj,frame_start,frame_end,scale_delta)
 
+            # Set material propoerties to handle multiple transparency
+            if len(obj.data.materials.values()) > 0 and obj.data.materials.values()[0].use_nodes and "Principled BSDF" in obj.data.materials.values()[0].node_tree.nodes:
+
+                mat = obj.data.materials.values()[0]
+                nodes = mat.node_tree.nodes
+                bsdf = nodes["Principled BSDF"]
+                attribute_node = nodes.new("ShaderNodeAttribute")
+                attribute_node.attribute_name = "alpha"
+                mat.node_tree.links.new(attribute_node.outputs["Color"],bsdf.inputs["Alpha"])
+
+            else:
+                if obj.data.materials:
+                    # assign to 1st material slot
+                    obj.data.materials[0] = bpy.data.materials['MultipleTransparency']
+                else:
+                    # no slots
+                    obj.data.materials.append(bpy.data.materials['MultipleTransparency'])
+
+
         print(time.time()-tinit)
         print(frame_end-frame_start+1)
         print((time.time()-tinit)/(frame_end-frame_start+1))
@@ -218,17 +339,21 @@ def set_node_tree(obj,frame_start,frame_end,scale_delta):
         mod.node_group = smear_node_tree
 
     mod = obj.modifiers.get("Smear Control Panel")
-    for inp in mod.node_group.inputs:
-        if inp.name == "Object":
-            mod[inp.identifier] = obj
-        elif inp.name == "Aggregated":
-            mod[inp.identifier] = bpy.data.objects[f"aggregated_animation_{obj.name}"]
-        elif inp.name == "First Frame":
-            mod[inp.identifier] = frame_start
-        elif inp.name == "Last Frame":
-            mod[inp.identifier] = frame_end
-        elif inp.name == "Smear Length":
-            mod[inp.identifier] = scale_delta
+
+    object_identifier = mod.node_group.interface.items_tree["Object"].identifier
+    mod[object_identifier] = obj
+
+    aggregated_identifier = mod.node_group.interface.items_tree["Aggregated"].identifier
+    mod[aggregated_identifier] = bpy.data.objects[f"aggregated_animation_{obj.name}"]
+
+    first_frame_identifier = mod.node_group.interface.items_tree["First Frame"].identifier
+    mod[first_frame_identifier] = frame_start
+
+    last_frame_identifier = mod.node_group.interface.items_tree["Last Frame"].identifier
+    mod[last_frame_identifier] = frame_end
+
+    smear_length_identifier = mod.node_group.interface.items_tree["Smear Length"].identifier
+    mod[smear_length_identifier] = scale_delta
 
 def get_bone_names(self, context, edit_text):
     bone_names = []
@@ -248,9 +373,16 @@ def register():
     bpy.utils.register_class(SmearControlPanel)
     bpy.utils.register_class(BakeDeltasTrajectoriesOperator)
 
+    bpy.utils.register_class(ElongatedInbetweensControlPanel)
+    bpy.utils.register_class(MotionLinesControlPanel)
+    bpy.utils.register_class(MultipleInbetweensControlPanel)
+
 def unregister():
     bpy.utils.unregister_class(SmearControlPanel)
     bpy.utils.unregister_class(BakeDeltasTrajectoriesOperator)
+    bpy.utils.unregister_class(ElongatedInbetweensControlPanel)
+    bpy.utils.unregister_class(MotionLinesControlPanel)
+    bpy.utils.unregister_class(MultipleInbetweensControlPanel)
 
 if __name__ == "__main__":
     register()
