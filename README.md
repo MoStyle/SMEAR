@@ -37,7 +37,7 @@ Parameters:
 - The “Ignore skeleton” option can be used for articulated characters if you want smear frames to depend on the full body movement (e.g., for fast motion) instead of the skeleton.
 - The "Prune Skeleton" section allows to select bones that will be ignored in the pre-processing. All vertices of these bones and their child will then be affected by their parent bones (see paper, section 3.2, last paragraph)
 - The “Temporal smoothing window” parameters control the number of frames to consider for temporal smoothing to avoid temporally noisy effects. Default is N=2 and gives generally good results.
-- The "Camera POV" option allows to compute smear frames depending on the motion of the object in camera space instead of in world space.
+- The "Camera POV" option allows to compute smear frames depending on the motion of the object in camera space instead of in world space. Only available for simple objects with no skeleton for now.
 
 After the pre-process ends, a Geometry Node modifier is applied to the selected object. Its parameters control the style of the smear frames, and can be accessed either through the modifier tab of the object or through the UI panels provided with SMEAR:
 
