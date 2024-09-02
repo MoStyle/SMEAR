@@ -75,9 +75,10 @@ class SmearControlPanel(Panel,bpy.types.Panel):
         fullBodyCheckbox.prop(scene, "fullBody")
 
         col.label(text="Prune Skeleton")
-        col.label(text="Select a bone. All child bones in the hierarchy will be discarded for smears baking")
-
+        col.label(text="Enter bones separated by \",\".")
         col.prop(scene,"discardedBone")
+        col.label(text="All child bones in the hierarchy")
+        col.label(text="will be discarded for baking")
 
         col.label(text="Temporal smoothing window:")
         col.prop(scene,"smoothWindow")
@@ -171,16 +172,16 @@ class MotionLinesControlPanel(EffectControlPanel,bpy.types.Panel):
     activate_toggle = GN_parameter("Activate Lines")
 
     effect_parameters = [
-            GN_parameter("Lines Lengths"),
+            GN_parameter("Lines Length"),
+            GN_parameter("Lines Past Length"),
+            GN_parameter("Lines Future Length"),
             GN_parameter("Lines Offset"),
             GN_parameter("Seed"),
             GN_parameter("Probability"),
             GN_parameter("Lines Speed threshold"),
             GN_parameter("Radius"),
             GN_parameter("Radius slope"),
-            GN_parameter("Line Material"),
-            GN_parameter("Lines Past Factor"),
-            GN_parameter("Lines Future Factor")
+            GN_parameter("Line Material")
         ]
 
 def clear_attributes(obj):
@@ -230,9 +231,8 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             scale_delta = 1.0
             for mod in obj.modifiers:
                 if mod.type == "NODES" and not (mod.node_group is None) and mod.node_group.name == "Smear Frames Controler":
-                    smear_length_identifier = mod.node_group.interface.items_tree["Smear Length"].identifier
-                    scale_delta = mod[smear_length_identifier]
-                    mod[smear_length_identifier] = 0.0
+                    original_identifier = mod.node_group.interface.items_tree["Original"].identifier
+                    mod[original_identifier] = True
                 if mod.type == "ARMATURE":
                     armature = mod.object
 
@@ -254,7 +254,8 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
 
             bones_to_discard = []
             if armature != None and context.scene.discardedBone != "":
-                selected_bones = [armature.data.bones[context.scene.discardedBone]]
+                # selected_bones = [armature.data.bones[context.scene.discardedBone]]
+                selected_bones = [armature.data.bones[bone] for bone in context.scene.discardedBone.split(", ")]
                 # selected_bones = [armature.data.bones["mixamorig:RightForeArm"],armature.data.bones["mixamorig:LeftForeArm"]]
                 # print(selected_bones)
                 bones_to_discard = [child.name for b in selected_bones for child in b.children_recursive]
@@ -301,7 +302,7 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             # pos_camera_aggregated = np.concatenate([positions_camera[frame] for frame in positions_camera])
             # add_mesh_to_scene(f"aggregated_animation_camera_{obj.name}",verts=pos_camera_aggregated,edges=[],faces=[])
 
-            set_node_tree(obj,frame_start,frame_end,scale_delta)
+            set_node_tree(obj,frame_start,frame_end,context.scene.cameraPOV)
 
             # Set material propoerties to handle multiple transparency
             if len(obj.data.materials.values()) > 0 and obj.data.materials.values()[0].use_nodes and "Principled BSDF" in obj.data.materials.values()[0].node_tree.nodes:
@@ -327,7 +328,7 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
         print((time.time()-tinit)/(frame_end-frame_start+1))
         return {'FINISHED'}
 
-def set_node_tree(obj,frame_start,frame_end,scale_delta):
+def set_node_tree(obj,frame_start,frame_end,cameraPOV):
     node_tree_exists = False
     for mod in obj.modifiers:
         if mod.type == "NODES" and not (mod.node_group is None) and mod.node_group.name == "Smear Frames Controler":
@@ -352,8 +353,14 @@ def set_node_tree(obj,frame_start,frame_end,scale_delta):
     last_frame_identifier = mod.node_group.interface.items_tree["Last Frame"].identifier
     mod[last_frame_identifier] = frame_end
 
-    smear_length_identifier = mod.node_group.interface.items_tree["Smear Length"].identifier
-    mod[smear_length_identifier] = scale_delta
+    original_identifier = mod.node_group.interface.items_tree["Original"].identifier
+    mod[original_identifier] = False
+
+    cameraPOV_identifier = mod.node_group.interface.items_tree["Camera POV"].identifier
+    mod[cameraPOV_identifier] = cameraPOV
+
+    camera_identifier = mod.node_group.interface.items_tree["Camera"].identifier
+    mod[camera_identifier] = bpy.context.scene.camera
 
 def get_bone_names(self, context, edit_text):
     bone_names = []
@@ -366,7 +373,7 @@ def get_bone_names(self, context, edit_text):
 
 def register():
     bpy.types.Scene.fullBody = bpy.props.BoolProperty(name="Ignore Skeleton",default=False)
-    bpy.types.Scene.discardedBone = bpy.props.StringProperty(name="Bone",search=get_bone_names)
+    bpy.types.Scene.discardedBone = bpy.props.StringProperty(name="Bones",search=get_bone_names)
     bpy.types.Scene.smoothWindow = bpy.props.IntProperty(name="n° frames", default=2)
     bpy.types.Scene.cameraPOV = bpy.props.BoolProperty(name="camera POV",default=False)
 
