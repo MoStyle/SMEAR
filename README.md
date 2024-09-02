@@ -9,6 +9,6 @@ The system is developed as part of the [MoStyle ANR Project](https://mostyle.git
 
 ### Latest
 
-**[V1.0]**(https://github.com/MoStyle/SMEAR/releases/tag/v1_0): SMEAR add-on used in the paper [SMEAR: Stylized Motion Exaggeration with ARt-direction](https://hal.science/hal-04576817v1/document). Jean Basset, Pierre Bénard, Pascal Barla. Siggraph 2024 Conference Papers
+**[V1.0](https://github.com/MoStyle/SMEAR/releases/tag/v1_0)**: SMEAR add-on used in the paper [SMEAR: Stylized Motion Exaggeration with ARt-direction](https://hal.science/hal-04576817v1/document). Jean Basset, Pierre Bénard, Pascal Barla. Siggraph 2024 Conference Papers
 
 ### Older
