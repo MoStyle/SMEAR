@@ -9,15 +9,17 @@ The system is developed as part of the [MoStyle ANR Project](https://mostyle.git
 
 ### Latest
 
-**[V1.0](https://github.com/MoStyle/SMEAR/releases/tag/v1_0)**: SMEAR add-on used in the paper [SMEAR: Stylized Motion Exaggeration with ARt-direction](https://hal.science/hal-04576817v1/document). Jean Basset, Pierre Bénard, Pascal Barla. Siggraph 2024 Conference Papers
+**[V1.1](https://github.com/MoStyle/SMEAR/releases/tag/v1_1)**: Updated add-on for Blender 4.2.0 LTS, with improved UI and simplified multiple effects application.
 
 ### Older
+
+**[V1.0](https://github.com/MoStyle/SMEAR/releases/tag/v1_0)**: SMEAR add-on used in the paper [SMEAR: Stylized Motion Exaggeration with ARt-direction](https://hal.science/hal-04576817v1/document). Jean Basset, Pierre Bénard, Pascal Barla. Siggraph 2024 Conference Papers
 
 ## Installation and Use
 
 ### Installation
 
-This add-on was developped and tested in Blender 3.6.
+This add-on was developped and tested in **Blender 4.2.0** LTS.
 
 Installation instructions:
 - Download this repository as a .zip file.
