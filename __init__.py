@@ -12,8 +12,6 @@ bl_info = {
 }
 
 import bpy
-from . import install_dependencies
-install_dependencies.install_all()
 from . import smear_control_panel 
 
 import imp
