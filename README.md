@@ -37,6 +37,7 @@ This section gives step by step instruction for a minimal working example of the
 - Download the add-on and name the zip file "SMEAR.zip"
 - Download the animation fbx file at [https://jbasset.github.io/assets/Files/RepStamp/figure_3_animation.fbx](https://jbasset.github.io/assets/Files/RepStamp/figure_3_animation.fbx)
 - Follow the instructions in video [https://jbasset.github.io/assets/Files/RepStamp/replicability_stamp.mp4](https://jbasset.github.io/assets/Files/RepStamp/replicability_stamp.mp4)
+Note: As motion lines are randomly sampled on the surface, and the figure in the paper was done with an earlier version of Blender, the result for Figure 3.e is slightly different in the video, but conceptually similar.
 
 ### Instructions for use
 
