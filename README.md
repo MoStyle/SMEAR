@@ -27,6 +27,17 @@ Installation instructions:
 - Click Install... and select the .zip file
 - An add-on named Animation: Smear should appear in the list, click the checkbox to enable it
 
+### Minimal example
+
+This section gives step by step instruction for a minimal working example of the add-on, to recreate the Figure 3 from the paper linked above.
+- Download Blender 4.2.0
+  - Go to https://download.blender.org/release/Blender4.2/
+  - Download blender-4.2.0-<YOUR_OPERATING_SYSTEM>
+  - Run the downloaded installer and follow the installation instructions
+- Download the add-on and name the zip file "SMEAR.zip"
+- Download the animation fbx file at [https://jbasset.github.io/assets/Files/RepStamp/figure_3_animation.fbx](https://jbasset.github.io/assets/Files/RepStamp/figure_3_animation.fbx)
+- Follow the instructions in video [https://jbasset.github.io/assets/Files/RepStamp/replicability_stamp.mp4](https://jbasset.github.io/assets/Files/RepStamp/replicability_stamp.mp4)
+
 ### Instructions for use
 
 The control panels for SMEAR should appear in the custom UI panels of Blender, in the section SMEAR.
