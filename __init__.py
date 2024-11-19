@@ -6,7 +6,7 @@
 bl_info = {
 	"name":"Smear",
 	"author": "Jean Basset",
-	"version": (1, 1),
+	"version": (1, 1, 1),
 	"blender": (4,2,0),
 	"category": "Animation",
 }
@@ -14,8 +14,8 @@ bl_info = {
 import bpy
 from . import smear_control_panel 
 
-import imp
-imp.reload(smear_control_panel)
+# import imp
+# imp.reload(smear_control_panel)
 
 node_trees = ["animationTiming","applyDeltas","catmullParametersAggregated","catmullRomInterp","displaceAndClamp","fromCameraCoord","getFloatAttributeAtFrame","getSpeed","idsRange","maxNormalize","pastFutureWeights","smoothedVoronoiNoise","speedFactor"]
 

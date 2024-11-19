@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "SMEAR"
-version = "1.1.0"
+version = "1.1.1"
 name = "SMEAR"
 tagline = "Create smear frames for 3D animations"
 maintainer = "Jean Basset <jean.basset@inria.fr>"
@@ -58,7 +58,7 @@ license = [
 #
 # [permissions]
 # network = "Need to sync motion-capture data to server"
-# files = "Import/export FBX from/to disk"
+files = "Import Geometry Nodes network from a Blender file included in the addon"
 # clipboard = "Copy and paste bone transforms"
 
 # Optional: build settings.

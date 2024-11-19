@@ -4,7 +4,6 @@
 
 import bpy
 import os
-import sys
 import cProfile
 import time
 from mathutils import Vector
@@ -14,33 +13,17 @@ from pstats import SortKey, Stats
 from bpy.utils import resource_path
 from pathlib import Path
 
-addon = True
-if addon:
-    USER = Path(resource_path('USER'))
-    src = USER / "scripts/addons" / os.path.dirname(os.path.realpath(__file__))
+from . import deltas_generation_functions as deltagen
+from .utils import *
 
-    from . import deltas_generation_functions as deltagen
-    from . import utils
-
-    import imp
-    imp.reload(deltagen)
-    imp.reload(utils)
-
-    from .utils import *
-
-else:
-    dir = os.path.dirname(bpy.data.filepath)
-    if not dir in sys.path:
-        sys.path.append(dir )
-
-    import deltas_generation_functions as deltagen
-    import utils
-
-    import imp
-    imp.reload(deltagen)
-    imp.reload(utils)
-
-    from utils import *
+def get_bone_names(self, context, edit_text):
+    bone_names = []
+    if context.active_object.type == "MESH":
+        for mod in context.active_object.modifiers:
+            if mod.type == "ARMATURE":
+                for bone in mod.object.data.bones:
+                    bone_names.append(bone.name)
+    return bone_names
 
 class Panel:
     bl_idname = 'VIEW3D_PT_smear_control'
@@ -72,18 +55,18 @@ class SmearControlPanel(Panel,bpy.types.Panel):
             for mod in obj.modifiers:
                 if mod.type == "ARMATURE":
                     fullBodyCheckbox.enabled = True
-        fullBodyCheckbox.prop(scene, "fullBody")
+        fullBodyCheckbox.prop(scene.smear, "fullBody")
 
         col.label(text="Prune Skeleton")
         col.label(text="Enter bones separated by \",\".")
-        col.prop(scene,"discardedBone")
+        col.prop(scene.smear,"discardedBone")
         col.label(text="All child bones in the hierarchy")
         col.label(text="will be discarded for baking")
 
         col.label(text="Temporal smoothing window:")
-        col.prop(scene,"smoothWindow")
+        col.prop(scene.smear,"smoothWindow")
 
-        col.prop(scene,"cameraPOV")
+        col.prop(scene.smear,"cameraPOV")
 
         col.operator(BakeDeltasTrajectoriesOperator.bl_idname)
 
@@ -201,25 +184,26 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
     appended_files = False
 
     def execute(self,context):
-        tinit = time.time()
-        if addon and not self.appended_files:
-            filepath="smear_frames_nodes.blend"
+        scene = context.scene
+        if not self.appended_files:
+            import addon_utils
+            for mod in addon_utils.modules():
+                if mod.bl_info.get("name") == "SMEAR":
+                    extension_dir = mod.__file__[0:-11] #path to the __init__.py file, removing "__init__.py" at the end
+            filepath = os.path.join(extension_dir, "smear_frames_nodes.blend")
 
-            directory=str(src / "smear_frames_nodes.blend" / "NodeTree")
-            filename="Smear Frames Controler"
-            bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
-            filename="Smear Frames Controler - Multiples"
-            bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
-            filename="Smear Frames Controler - Lines"
-            bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
+            node_group_name="Smear Frames Controler"
+            bpy.ops.wm.append(filepath = os.path.join(filepath, "NodeTree", node_group_name), directory = os.path.join(filepath, "NodeTree"), filename = node_group_name)
+            node_group_name="Smear Frames Controler - Multiples"
+            bpy.ops.wm.append(filepath = os.path.join(filepath, "NodeTree", node_group_name), directory = os.path.join(filepath, "NodeTree"), filename = node_group_name)
+            node_group_name="Smear Frames Controler - Lines"
+            bpy.ops.wm.append(filepath = os.path.join(filepath, "NodeTree", node_group_name), directory = os.path.join(filepath, "NodeTree"), filename = node_group_name)
 
-            directory=str(src / "smear_frames_nodes.blend" / "Material")
-            filename="Delta_Visualization"
-            bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
+            material_name="Delta_Visualization"
+            bpy.ops.wm.append(filepath = os.path.join(filepath, "Material", material_name), directory = os.path.join(filepath, "Material"), filename = material_name)
 
-            directory=str(src / "smear_frames_nodes.blend" / "Material")
-            filename="MultipleTransparency"
-            bpy.ops.wm.append(filepath=filepath, directory=directory, filename=filename)
+            material_name="MultipleTransparency"
+            bpy.ops.wm.append(filepath = os.path.join(filepath, "Material", material_name), directory = os.path.join(filepath, "Material"), filename = material_name)
 
             self.appended_files = True
 
@@ -249,47 +233,20 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
                 frame_start = min(keyframe_frames[0],frame_start)
                 frame_end = max(keyframe_frames[-1], frame_end)
 
-            # positions = get_anim_vertices(obj,frame_start,frame_end)
-            # joints = get_anim_joints(obj,frame_start,frame_end)
-
             bones_to_discard = []
-            if armature != None and context.scene.discardedBone != "":
-                # selected_bones = [armature.data.bones[context.scene.discardedBone]]
-                selected_bones = [armature.data.bones[bone] for bone in context.scene.discardedBone.split(", ")]
-                # selected_bones = [armature.data.bones["mixamorig:RightForeArm"],armature.data.bones["mixamorig:LeftForeArm"]]
-                # print(selected_bones)
+            if armature != None and scene.smear.discardedBone != "":
+                selected_bones = [armature.data.bones[bone] for bone in scene.smear.discardedBone.split(", ")]
                 bones_to_discard = [child.name for b in selected_bones for child in b.children_recursive]
-            # bones_to_discard = ["mixamorig:RightForeArm","mixamorig:LeftForeArm"]
 
-            positions, joints = get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,camera_coord=context.scene.cameraPOV)
-            # print(len(joints[1]))
+            positions, joints = get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,camera_coord=scene.smear.cameraPOV)
 
-            # Get deltas
-            # with Profile() as profile:
-            #     print(f"{get_anim_vertices_and_joints(obj,frame_start,frame_end)}")
-            #     (
-            #         Stats(profile)
-            #         .strip_dirs()
-            #         .sort_stats(SortKey.CUMULATIVE)
-            #         .print_stats()
-            #     )
-            animation_deltas = deltagen.get_animation_deltas_ribbon(obj,positions,joints,bpy.context.scene.camera,bpy.context.scene.smoothWindow,full_body=context.scene.fullBody)
+            animation_deltas = deltagen.get_animation_deltas_ribbon(obj,positions,joints,bpy.context.scene.camera,scene.smear.smoothWindow,full_body=scene.smear.fullBody)
 
             for frame in animation_deltas:
                 dname = f"delta_{frame}"
                 obj.data.attributes.new(name=dname,type="FLOAT",domain="POINT")
                 obj.data.attributes[dname].data.foreach_set("value",animation_deltas[frame])
 
-            # Get deltas camera coordinates
-            # animation_deltas = deltagen.get_animation_deltas_ribbon(obj,positions,joints,bpy.context.scene.camera,bpy.context.scene.smoothWindow,full_body=context.scene.fullBody,camera_coord=bpy.context.scene.cameraPOV)
-            # delta_fct_id = context.scene.delta_fct
-            # animation_deltas_camera = deltagen.get_animation_deltas(obj,delta_functions[delta_fct_id],camera_coord=True)
-            # animation_deltas_camera = deltagen.get_animation_deltas_multiple_planes(obj,delta_functions[delta_fct_id],camera_coord=True)
-
-            # for frame in animation_deltas_camera:
-                # dname = f"delta_camera_{frame}"
-                # obj.data.attributes.new(name=dname,type="FLOAT",domain="POINT")
-                # obj.data.attributes[dname].data.foreach_set("value",animation_deltas_camera[frame])
 
             pos_aggregated = np.concatenate([positions[frame] for frame in positions])
             add_mesh_to_scene(f"aggregated_animation_{obj.name}",verts=pos_aggregated,edges=[],faces=[])
@@ -298,11 +255,7 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             bpy.data.objects[f"aggregated_animation_{obj.name}"].select_set(False)
             obj.select_set(True)
 
-            # positions_camera = get_anim_vertices(obj,frame_start,frame_end,camera_coord=True)
-            # pos_camera_aggregated = np.concatenate([positions_camera[frame] for frame in positions_camera])
-            # add_mesh_to_scene(f"aggregated_animation_camera_{obj.name}",verts=pos_camera_aggregated,edges=[],faces=[])
-
-            set_node_tree(obj,frame_start,frame_end,context.scene.cameraPOV)
+            set_node_tree(obj,frame_start,frame_end,scene.smear.cameraPOV)
 
             # Set material propoerties to handle multiple transparency
             if len(obj.data.materials.values()) > 0 and obj.data.materials.values()[0].use_nodes and "Principled BSDF" in obj.data.materials.values()[0].node_tree.nodes:
@@ -322,10 +275,6 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
                     # no slots
                     obj.data.materials.append(bpy.data.materials['MultipleTransparency'])
 
-
-        print(time.time()-tinit)
-        print(frame_end-frame_start+1)
-        print((time.time()-tinit)/(frame_end-frame_start+1))
         return {'FINISHED'}
 
 def set_node_tree(obj,frame_start,frame_end,cameraPOV):
@@ -362,20 +311,15 @@ def set_node_tree(obj,frame_start,frame_end,cameraPOV):
     camera_identifier = mod.node_group.interface.items_tree["Camera"].identifier
     mod[camera_identifier] = bpy.context.scene.camera
 
-def get_bone_names(self, context, edit_text):
-    bone_names = []
-    if context.active_object.type == "MESH":
-        for mod in context.active_object.modifiers:
-            if mod.type == "ARMATURE":
-                for bone in mod.object.data.bones:
-                    bone_names.append(bone.name)
-    return bone_names
+class SmearPropertyGroup(bpy.types.PropertyGroup):
+    fullBody: bpy.props.BoolProperty(name="Ignore Skeleton",default=False)
+    discardedBone: bpy.props.StringProperty(name="Bones",search=get_bone_names)
+    smoothWindow: bpy.props.IntProperty(name="n° frames", default=2)
+    cameraPOV: bpy.props.BoolProperty(name="camera POV",default=False)
 
 def register():
-    bpy.types.Scene.fullBody = bpy.props.BoolProperty(name="Ignore Skeleton",default=False)
-    bpy.types.Scene.discardedBone = bpy.props.StringProperty(name="Bones",search=get_bone_names)
-    bpy.types.Scene.smoothWindow = bpy.props.IntProperty(name="n° frames", default=2)
-    bpy.types.Scene.cameraPOV = bpy.props.BoolProperty(name="camera POV",default=False)
+    bpy.utils.register_class(SmearPropertyGroup)
+    bpy.types.Scene.smear = bpy.props.PointerProperty(type=SmearPropertyGroup)
 
     bpy.utils.register_class(SmearControlPanel)
     bpy.utils.register_class(BakeDeltasTrajectoriesOperator)
@@ -385,8 +329,11 @@ def register():
     bpy.utils.register_class(MultipleInbetweensControlPanel)
 
 def unregister():
+    bpy.utils.unregister_class(SmearPropertyGroup)
+
     bpy.utils.unregister_class(SmearControlPanel)
     bpy.utils.unregister_class(BakeDeltasTrajectoriesOperator)
+
     bpy.utils.unregister_class(ElongatedInbetweensControlPanel)
     bpy.utils.unregister_class(MotionLinesControlPanel)
     bpy.utils.unregister_class(MultipleInbetweensControlPanel)

@@ -3,55 +3,23 @@
 # SPDX-License-Identifier: CECILL-2.1
 
 import numpy as np
-import os
-import sys
 import bpy
 import time
 
 from cProfile import Profile
 from pstats import SortKey, Stats
 
-addon = True
-if addon:
-	from . import utils
-
-	import imp
-	imp.reload(utils)
-
-	from .utils import *
-
-else:
-	dir = os.path.dirname(bpy.data.filepath)
-	if not dir in sys.path:
-		sys.path.append(dir )
-
-	import utils
-
-	import imp
-	imp.reload(utils)
-
-	from utils import *
-
+from .utils import *
 
 def temporal_smooth_delta(animation_deltas,n_samples,frame_start,frame_end,n_vertices):
 	w = lambda x: (1-x**2)**2
-	# n_samples = 2
 	weights = [w(f/(n_samples+1)) for f in range(-n_samples,n_samples+1)]
 	animation_deltas_smoothed = {}
-	# animation_deltas_list = list(animation_deltas.values())
 	for frame in range(frame_start,frame_end+1):
-		# print(f"Temporal smoothing for frame {frame}")
 		sampled_frames = range(frame-n_samples,frame+n_samples+1)
-		# weights = np.array([w((frame-f)/(n_samples+1)) for f in sampled_frames])
 		sampled_frames_clamped = [max(frame_start,min(frame_end,f)) for f in sampled_frames]
 
 		animation_deltas_smoothed[frame] = np.sum(np.transpose(np.transpose([animation_deltas[f] for f in sampled_frames_clamped]) * weights),axis=0)/sum(weights)
-		# animation_deltas_smoothed[frame] = np.sum(np.array([animation_deltas[f] for f in sampled_frames_clamped]) * weights[:,None],axis=0)/sum(weights)
-		# animation_deltas_smoothed[frame] = np.sum(np.take(animation_deltas_list, sampled_frames_clamped, axis=0) * weights)/sum(weights)
-		# np.take(original_anim_vertices[frame], vertices_ids, axis=0)
-		# print(animation_deltas_smoothed[frame])
-
-		# print(f"mean delta = {np.mean(animation_deltas_smoothed[frame])}\nmax delta = {max(animation_deltas_smoothed[frame])}\nmin delta = {min(animation_deltas_smoothed[frame])}")
 
 	return animation_deltas_smoothed
 
@@ -117,7 +85,7 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 		# Vertices not attached to any bones will keep the global deltas computed above
 		for mod in obj.modifiers:
 			if mod.type == "ARMATURE":
-				for o in bpy.data.objects:
+				for o in bpy.context.scene.objects:
 					o.select_set(False)
 				bpy.data.objects[mod.name].select_set(True)
 				armature = bpy.data.objects[mod.name]

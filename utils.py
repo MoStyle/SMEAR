@@ -11,7 +11,7 @@ from mathutils import Vector, Matrix, Euler
 
 def add_mesh_to_scene(name,verts=None,edges=None,faces=None,override=True):
 	if override and name in bpy.data.objects:
-		bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
+		bpy.data.objects.remove(bpy.context.scene.objects[name], do_unlink=True)
 
 	mesh = bpy.data.meshes.new(name)
 	obj = bpy.data.objects.new(mesh.name, mesh)
@@ -32,8 +32,8 @@ def add_mesh_to_scene(name,verts=None,edges=None,faces=None,override=True):
 	return obj
 
 def copy_obj(obj,name=None,override=True,clear_matrix_world=True):
-	if override and name in bpy.data.objects:
-		bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
+	if override and name in bpy.context.scene.objects:
+		bpy.context.scene.objects.remove(bpy.context.scene.objects[name], do_unlink=True)
 
 	new_obj = obj.copy()
 	new_obj.data = obj.data.copy()
@@ -49,7 +49,7 @@ def copy_obj(obj,name=None,override=True,clear_matrix_world=True):
 
 def delete_object(obj):
 	bpy.ops.object.select_all(action='DESELECT')
-	bpy.data.objects[obj.name].select_set(True)
+	bpy.context.scene.objects[obj.name].select_set(True)
 	bpy.ops.object.delete() 
 
 def get_vertex_normals(vertices,faces):
@@ -133,15 +133,15 @@ def get_anim_joints(obj,frame_start,frame_end,camera_coord=False):
 		anim_joints[frame] = {}
 		for mod in obj.modifiers:
 			if mod.type == "ARMATURE":
-				for o in bpy.data.objects:
+				for o in bpy.context.scene.objects:
 					o.select_set(False)
-				bpy.data.objects[mod.name].select_set(True)
+				bpy.context.scene.objects[mod.name].select_set(True)
 
-				armature = bpy.data.objects[mod.name]
+				armature = bpy.context.scene.objects[mod.name]
 				for b in armature.data.bones:
 					bone_name = b.name
-					bone = bpy.data.objects[mod.name].pose.bones[bone_name]
-					anim_joints[frame][bone_name] = [np.array(bpy.data.objects[mod.name].matrix_world @ bone.head), np.array(bpy.data.objects[mod.name].matrix_world @ bone.tail)]
+					bone = bpy.context.scene.objects[mod.name].pose.bones[bone_name]
+					anim_joints[frame][bone_name] = [np.array(bpy.context.scene.objects[mod.name].matrix_world @ bone.head), np.array(bpy.context.scene.objects[mod.name].matrix_world @ bone.tail)]
 
 	return anim_joints
 
@@ -187,13 +187,13 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 		anim_joints[frame] = {}
 		for mod in obj.modifiers:
 			if mod.type == "ARMATURE":
-				for o in bpy.data.objects:
+				for o in bpy.context.scene.objects:
 					o.select_set(False)
-				bpy.data.objects[mod.name].select_set(True)
+				bpy.context.scene.objects[mod.name].select_set(True)
 
-				armature = bpy.data.objects[mod.name]
-				M = bpy.data.objects[mod.name].matrix_world
-				p = bpy.data.objects[mod.name].pose
+				armature = bpy.context.scene.objects[mod.name]
+				M = bpy.context.scene.objects[mod.name].matrix_world
+				p = bpy.context.scene.objects[mod.name].pose
 				for b in armature.data.bones:
 					bone_name = b.name
 					if bone_name in bones_to_discard:
@@ -255,7 +255,7 @@ def curve_from_points(coords):
 		polyline.bezier_points[i].handle_left_type = 'AUTO'
 
 	# create Object
-	curveOB = bpy.data.objects.new('myCurve', curveData)
+	curveOB = bpy.context.scene.objects.new('myCurve', curveData)
 
 	# attach to scene and validate context
 	col = bpy.data.collections["Collection"]
