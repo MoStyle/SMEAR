@@ -298,25 +298,3 @@ def norm(v):
 
 def dot(v1,v2):
 	return v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2]
-
-if __name__ == '__main__':
-	obj = bpy.context.active_object
-	camera = bpy.context.scene.camera
-	new_vertices = []
-	for i in range(len(obj.data.vertices)):
-		new_vertices.append(obj.data.vertices[i].co - camera.location)
-		new_vertices[i].rotate(camera.rotation_euler)
-
-	for i in range(len(obj.data.vertices)):
-		obj.data.vertices[i].co = new_vertices[i]
-
-	# return_vertices = []
-	# for i in range(len(obj.data.vertices)):
-	# 	return_vertices.append(obj.data.vertices[i].co)
-	# 	eul = camera.rotation_euler
-	# 	eul[:] = -eul[0],-eul[1],-eul[2]
-	# 	return_vertices[i].rotate(eul)
-	# 	return_vertices[i] += camera.location
-
-	# for i in range(len(obj.data.vertices)):
-	# 	obj.data.vertices[i].co = return_vertices[i]

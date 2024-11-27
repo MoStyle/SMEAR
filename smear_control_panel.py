@@ -186,11 +186,9 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
     def execute(self,context):
         scene = context.scene
         if not self.appended_files:
-            import addon_utils
-            for mod in addon_utils.modules():
-                if mod.bl_info.get("name") == "SMEAR":
-                    extension_dir = mod.__file__[0:-11] #path to the __init__.py file, removing "__init__.py" at the end
-            filepath = os.path.join(extension_dir, "smear_frames_nodes.blend")
+            path = os.path.dirname(os.path.realpath(__file__))
+            abspath = bpy.path.abspath(path)
+            filepath = os.path.join(abspath, "smear_frames_nodes.blend")
 
             node_group_name="Smear Frames Controler"
             bpy.ops.wm.append(filepath = os.path.join(filepath, "NodeTree", node_group_name), directory = os.path.join(filepath, "NodeTree"), filename = node_group_name)
@@ -330,6 +328,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(SmearPropertyGroup)
+    del bpy.types.Scene.smear
 
     bpy.utils.unregister_class(SmearControlPanel)
     bpy.utils.unregister_class(BakeDeltasTrajectoriesOperator)
@@ -337,7 +336,3 @@ def unregister():
     bpy.utils.unregister_class(ElongatedInbetweensControlPanel)
     bpy.utils.unregister_class(MotionLinesControlPanel)
     bpy.utils.unregister_class(MultipleInbetweensControlPanel)
-
-if __name__ == "__main__":
-    register()
-    print("Execution ended")
