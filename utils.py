@@ -153,8 +153,6 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 
 	depsgraph = bpy.context.evaluated_depsgraph_get()
 
-	n_vertices = len(obj.data.vertices)
-
 	anim_vertices = {}
 	anim_joints = {}
 	wm = bpy.context.window_manager
@@ -166,6 +164,7 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 
 		# https://blender.stackexchange.com/questions/264568/what-is-the-fastest-way-to-set-global-vertices-coordinates-to-a-numpy-array-usin
 		ob_eval = obj.evaluated_get(depsgraph)
+		n_vertices = len(ob_eval.data.vertices)
 		rotation_and_scale = obj.matrix_world.to_3x3().transposed()
 		offset = np.array(obj.matrix_world.translation)
 		verts_temp = np.empty(n_vertices*3,dtype=np.float64)
@@ -189,11 +188,11 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 			if mod.type == "ARMATURE":
 				for o in bpy.context.scene.objects:
 					o.select_set(False)
-				bpy.context.scene.objects[mod.name].select_set(True)
+				mod.object.select_set(True)
 
-				armature = bpy.context.scene.objects[mod.name]
-				M = bpy.context.scene.objects[mod.name].matrix_world
-				p = bpy.context.scene.objects[mod.name].pose
+				armature = mod.object
+				M = armature.matrix_world
+				p = armature.pose
 				for b in armature.data.bones:
 					bone_name = b.name
 					if bone_name in bones_to_discard:

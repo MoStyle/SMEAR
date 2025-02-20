@@ -87,8 +87,9 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 			if mod.type == "ARMATURE":
 				for o in bpy.context.scene.objects:
 					o.select_set(False)
-				bpy.data.objects[mod.name].select_set(True)
-				armature = bpy.data.objects[mod.name]
+				
+				armature = mod.object
+				armature.select_set(True)
 
 				animation_deltas[frame] = [0 for i in range(n_vertices)]
 
@@ -102,6 +103,8 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 
 				for (group_index,vertices_ids) in enumerate(vertices_ids_in_groups):
 					vertices_group = np.take(original_anim_vertices[frame], vertices_ids, axis=0)
+					if len(vertices_group) == 0:
+						continue
 
 					n_vertices_group = len(vertices_group)
 					bone_name = obj.vertex_groups[group_index].name
@@ -202,6 +205,8 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 				for (group_index,vertices_ids) in enumerate(vertices_ids_in_groups):
 					weights_group = weights_in_groups[group_index]
 					n_vertices_group = len(vertices_ids)
+					if (n_vertices_group) == 0:
+						continue
 
 					bone_name = obj.vertex_groups[group_index].name
 					bone = armature.data.bones[bone_name]
