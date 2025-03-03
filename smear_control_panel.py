@@ -210,7 +210,6 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             clear_attributes(obj)
 
             armature = None
-            scale_delta = 1.0
             for mod in obj.modifiers:
                 if mod.type == "NODES" and not (mod.node_group is None) and mod.node_group.name == "Smear Frames Controler":
                     original_identifier = mod.node_group.interface.items_tree["Original"].identifier
@@ -255,36 +254,50 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
 
             set_node_tree(obj,frame_start,frame_end,scene.smear.cameraPOV)
 
-            # Set material propoerties to handle multiple transparency
-            if len(obj.data.materials.values()) > 0 and obj.data.materials.values()[0].use_nodes and "Principled BSDF" in obj.data.materials.values()[0].node_tree.nodes:
-
-                mat = obj.data.materials.values()[0]
-                nodes = mat.node_tree.nodes
-                bsdf = nodes["Principled BSDF"]
-                attribute_node = nodes.new("ShaderNodeAttribute")
-                attribute_node.attribute_name = "alpha"
-                mat.node_tree.links.new(attribute_node.outputs["Color"],bsdf.inputs["Alpha"])
-
-            else:
-                if obj.data.materials:
-                    # assign to 1st material slot
-                    obj.data.materials[0] = bpy.data.materials['MultipleTransparency']
-                else:
-                    # no slots
-                    obj.data.materials.append(bpy.data.materials['MultipleTransparency'])
-
         return {'FINISHED'}
 
 def set_node_tree(obj,frame_start,frame_end,cameraPOV):
     node_tree_exists = False
+    armature_exists = False
+    subsurface_exists = False
     for mod in obj.modifiers:
         if mod.type == "NODES" and not (mod.node_group is None) and mod.node_group.name == "Smear Frames Controler":
             node_tree_exists = True
+        if mod.type == "ARMATURE":
+            armature_exists = True
+        if mod.type == "SUBSURF":
+            subsurface_exists = True
 
     if not node_tree_exists:
         mod = obj.modifiers.new("Smear Control Panel","NODES")
         smear_node_tree = bpy.data.node_groups["Smear Frames Controler"]
         mod.node_group = smear_node_tree
+
+        # Move control panel to be the modifier just after the armature:
+        if armature_exists:
+            armature_index = 0
+            smear_index = 0
+            for i in range(len(obj.modifiers)):
+                mod = obj.modifiers[i]
+                if mod.type == "ARMATURE":
+                    armature_index = i
+                if mod.name == "Smear Control Panel":
+                    smear_index = i
+            
+            obj.modifiers.move(smear_index,armature_index+1)
+        
+        # If no armature, still need to move modifier before any subdivision
+        elif subsurface_exists:
+            subsurface_index = 0
+            smear_index = 0
+            for i in range(len(obj.modifiers)):
+                mod = obj.modifiers[i]
+                if mod.type == "SUBSURF":
+                    subsurface_index = i
+                if mod.name == "Smear Control Panel":
+                    smear_index = i
+            
+            obj.modifiers.move(smear_index,max(subsurface_index-1,0))
 
     mod = obj.modifiers.get("Smear Control Panel")
 

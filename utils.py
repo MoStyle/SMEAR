@@ -151,6 +151,17 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 		frame_start = keyframe_frames[0]
 		frame_end = keyframe_frames[-1]
 
+	obj_copy = obj.copy()
+	mods_to_remove = []
+	for mod in obj_copy.modifiers:
+		if mod.type == "SUBSURF":
+			mods_to_remove.append(mod.name)
+	for mod_name in mods_to_remove:
+		obj_copy.modifiers.remove(obj_copy.modifiers[mod_name])
+	
+	col = obj.users_collection[0]
+	col.objects.link(obj_copy)
+
 	depsgraph = bpy.context.evaluated_depsgraph_get()
 
 	anim_vertices = {}
@@ -161,9 +172,9 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 		bpy.context.scene.frame_set(frame)
 		wm.progress_update(frame)
 
-
 		# https://blender.stackexchange.com/questions/264568/what-is-the-fastest-way-to-set-global-vertices-coordinates-to-a-numpy-array-usin
-		ob_eval = obj.evaluated_get(depsgraph)
+		ob_eval = obj_copy.evaluated_get(depsgraph)
+
 		n_vertices = len(ob_eval.data.vertices)
 		rotation_and_scale = obj.matrix_world.to_3x3().transposed()
 		offset = np.array(obj.matrix_world.translation)
@@ -201,6 +212,10 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 					anim_joints[frame][b.name] = [np.array(M @ bone.head), np.array(M @ bone.tail), bone]
 
 	wm.progress_end()
+
+	objs = bpy.data.objects
+	objs.remove(objs[obj_copy.name],do_unlink=True)
+
 	return anim_vertices, anim_joints
 
 def get_closest_kept_parent(bone,bones_to_discard):
