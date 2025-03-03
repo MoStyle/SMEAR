@@ -82,6 +82,9 @@ Parameters:
 
 #### Multiple In-Betweens
 
+**To use transparency in multiple in-betweens, you must** modify the material of your animated object so that its alpha channel is controled by an attribute named "alpha" (automatically created and controlled by the SMEAR add-on). See minimal example below:
+![Minimal example for transparency of materials](images/material_transparency.PNG)
+
 This panel controls the Multiple In-Between effect, where partially tranparent copies of the object are placed along its trajectory.
 Parameters:
 - **Future/Past Multiples**: number of multiple copies to add in the past and future of the trajectory
