@@ -239,6 +239,8 @@ def get_keyframe_frames(obj):
 					for key in fc.keyframe_points :
 						keyframe_frames.append(int(key.co[0]))
 
+	if obj.parent != None:
+		keyframe_frames += get_keyframe_frames(obj.parent)
 	for mod in obj.modifiers:
 		if mod.type == "ARMATURE":
 			keyframe_frames += get_keyframe_frames(mod.object)
