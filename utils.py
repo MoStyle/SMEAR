@@ -162,55 +162,67 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 	col = obj.users_collection[0]
 	col.objects.link(obj_copy)
 
-	depsgraph = bpy.context.evaluated_depsgraph_get()
-
-	anim_vertices = {}
-	anim_joints = {}
 	wm = bpy.context.window_manager
 	wm.progress_begin(0,frame_end-frame_start)
-	for frame in range(frame_start,frame_end+1):
-		bpy.context.scene.frame_set(frame)
-		wm.progress_update(frame)
 
-		# https://blender.stackexchange.com/questions/264568/what-is-the-fastest-way-to-set-global-vertices-coordinates-to-a-numpy-array-usin
-		ob_eval = obj_copy.evaluated_get(depsgraph)
+	try:
+		depsgraph = bpy.context.evaluated_depsgraph_get()
 
-		n_vertices = len(ob_eval.data.vertices)
-		rotation_and_scale = obj.matrix_world.to_3x3().transposed()
-		offset = np.array(obj.matrix_world.translation)
-		verts_temp = np.empty(n_vertices*3,dtype=np.float64)
-		ob_eval.data.vertices.foreach_get('co',verts_temp)
-		verts_temp.shape = (n_vertices,3)
-		verts_temp = np.matmul(verts_temp, rotation_and_scale)
-		verts_temp += offset
-		anim_vertices[frame] = verts_temp
+		anim_vertices = {}
+		anim_joints = {}
+		for frame in range(frame_start,frame_end+1):
+			bpy.context.scene.frame_set(frame)
+			wm.progress_update(frame)
 
-		if camera_coord:
-			camera = bpy.context.scene.camera
-			for i in range(len(anim_vertices[frame])):
-				anim_vertices[frame][i] -= camera.location
-				position_vector = Vector(anim_vertices[frame][i])
-				position_vector.rotate(camera.rotation_euler)
-				position_vector[2] *= -1
-				anim_vertices[frame][i] = np.array(position_vector)
+			# https://blender.stackexchange.com/questions/264568/what-is-the-fastest-way-to-set-global-vertices-coordinates-to-a-numpy-array-usin
+			ob_eval = obj_copy.evaluated_get(depsgraph)
 
-		anim_joints[frame] = {}
-		for mod in obj.modifiers:
-			if mod.type == "ARMATURE":
-				for o in bpy.context.scene.objects:
-					o.select_set(False)
-				mod.object.select_set(True)
+			n_vertices = len(ob_eval.data.vertices)
+			rotation_and_scale = obj.matrix_world.to_3x3().transposed()
+			offset = np.array(obj.matrix_world.translation)
+			verts_temp = np.empty(n_vertices*3,dtype=np.float64)
+			ob_eval.data.vertices.foreach_get('co',verts_temp)
+			verts_temp.shape = (n_vertices,3)
+			verts_temp = np.matmul(verts_temp, rotation_and_scale)
+			verts_temp += offset
+			anim_vertices[frame] = verts_temp
 
-				armature = mod.object
-				M = armature.matrix_world
-				p = armature.pose
-				for b in armature.data.bones:
-					bone_name = b.name
-					if bone_name in bones_to_discard:
-						bone_name = get_closest_kept_parent(b,bones_to_discard).name
-					bone = p.bones[bone_name]
-					anim_joints[frame][b.name] = [np.array(M @ bone.head), np.array(M @ bone.tail), bone]
+			if camera_coord:
+				camera = bpy.context.scene.camera
+				for i in range(len(anim_vertices[frame])):
+					anim_vertices[frame][i] -= camera.location
+					position_vector = Vector(anim_vertices[frame][i])
+					position_vector.rotate(camera.rotation_euler)
+					position_vector[2] *= -1
+					anim_vertices[frame][i] = np.array(position_vector)
 
+			anim_joints[frame] = {}
+			for mod in obj.modifiers:
+				if mod.type == "ARMATURE":
+					for o in bpy.context.scene.objects:
+						o.select_set(False)
+					mod.object.select_set(True)
+
+					armature = mod.object
+					M = armature.matrix_world
+					p = armature.pose
+					for b in armature.data.bones:
+						bone_name = b.name
+						if bone_name in bones_to_discard:
+							bone_name = get_closest_kept_parent(b,bones_to_discard).name
+						bone = p.bones[bone_name]
+						anim_joints[frame][b.name] = [np.array(M @ bone.head), np.array(M @ bone.tail), bone]
+
+			
+	
+	except Exception as error: # If an error occurs, we still need to delete the object copy and stop the progress bar
+		wm.progress_end()
+
+		objs = bpy.data.objects
+		objs.remove(objs[obj_copy.name],do_unlink=True)
+		
+		raise error
+	
 	wm.progress_end()
 
 	objs = bpy.data.objects
