@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "SMEAR"
-version = "1.1.4"
+version = "1.1.5"
 name = "SMEAR"
 tagline = "Create smear frames for 3D animations"
 maintainer = "Jean Basset <jean.basset@inria.fr>"

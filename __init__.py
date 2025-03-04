@@ -6,7 +6,7 @@
 bl_info = {
 	"name":"Smear",
 	"author": "Jean Basset",
-	"version": (1, 1, 4),
+	"version": (1, 1, 5),
 	"blender": (4,2,0),
 	"category": "Animation",
 }
