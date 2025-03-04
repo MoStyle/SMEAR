@@ -44,14 +44,18 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 	faces = [[x_id for x_id in obj.data.polygons[i].vertices] for i in range(len(obj.data.polygons))]
 
 	animation_deltas = {}
-	vertex_group_names = [g.name for g in obj.vertex_groups]
-	# vertices_ids_in_groups = [[v.index for v in obj.data.vertices if group in [g.group for g in v.groups]] for group in range(len(obj.vertex_groups))]
-	vertices_ids_in_groups = [[] for group in range(len(obj.vertex_groups))]
-	weights_in_groups = [[] for group in range(len(obj.vertex_groups))]
-	for v in obj.data.vertices:
-		for g in v.groups:
-			vertices_ids_in_groups[g.group].append(v.index)
-			weights_in_groups[g.group].append(g.weight)
+	
+	for mod in obj.modifiers:
+		if mod.type == "ARMATURE":
+			bone_names = [b.name for b in mod.object.data.bones]
+
+			vertex_group_names = [g.name for g in obj.vertex_groups]
+			vertices_ids_in_groups = [[] for group in obj.vertex_groups]
+			weights_in_groups = [[] for group in obj.vertex_groups]
+			for v in obj.data.vertices:
+				for g in v.groups:
+					vertices_ids_in_groups[g.group].append(v.index)
+					weights_in_groups[g.group].append(g.weight)
 
 	wm = bpy.context.window_manager
 	wm.progress_begin(0,frame_end-frame_start)
@@ -108,6 +112,10 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 
 					n_vertices_group = len(vertices_group)
 					bone_name = obj.vertex_groups[group_index].name
+
+					if bone_name not in bone_names:
+						continue
+
 					bone = armature.data.bones[bone_name]
 
 					joints = original_anim_joints[frame][bone_name]
@@ -209,10 +217,14 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 						continue
 
 					bone_name = obj.vertex_groups[group_index].name
-					bone = armature.data.bones[bone_name]
+
+					if bone_name not in bone_names:
+						continue
 
 					if bone_name in still_bones:
 						continue
+
+					bone = armature.data.bones[bone_name]
 
 					closest_kept_parent = original_anim_joints[frame][bone_name][2]
 					if bone_name != closest_kept_parent.name:
