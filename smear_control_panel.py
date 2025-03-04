@@ -32,7 +32,7 @@ class Panel:
     bl_region_type = 'UI'  
 
 class SmearControlPanel(Panel,bpy.types.Panel):
-    bl_idname = "SmearControlPanel"
+    bl_idname = "VIEW3D_PT_SmearControlPanel"
     bl_label = "Smear frame generation"
     bl_category = "SMEAR"
 
@@ -104,7 +104,7 @@ class GN_parameter():
         self.as_attribute = as_attribute
 
 class ElongatedInbetweensControlPanel(EffectControlPanel,bpy.types.Panel):
-    bl_idname = "ElongatedInbetweensControlPanel"
+    bl_idname = "VIEW3D_PT_ElongatedInbetweensControlPanel"
     bl_label = "Elongated In-Betweens"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -125,7 +125,7 @@ class ElongatedInbetweensControlPanel(EffectControlPanel,bpy.types.Panel):
         ]
 
 class MultipleInbetweensControlPanel(EffectControlPanel,bpy.types.Panel):
-    bl_idname = "MultipleInbetweensControlPanel"
+    bl_idname = "VIEW3D_PT_MultipleInbetweensControlPanel"
     bl_label = "Multiple In-Betweens"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -146,7 +146,7 @@ class MultipleInbetweensControlPanel(EffectControlPanel,bpy.types.Panel):
         ]
 
 class MotionLinesControlPanel(EffectControlPanel,bpy.types.Panel):
-    bl_idname = "MotionLinesControlPanel"
+    bl_idname = "VIEW3D_PT_MotionLinesControlPanel"
     bl_label = "Motion lines"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
