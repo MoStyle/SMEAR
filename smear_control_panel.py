@@ -207,6 +207,7 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
 
         obj = bpy.context.active_object
         if obj.type == 'MESH':
+            current_frame = bpy.context.scene.frame_current
             clear_attributes(obj)
 
             armature = None
@@ -253,6 +254,8 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             obj.select_set(True)
 
             set_node_tree(obj,frame_start,frame_end,scene.smear.cameraPOV)
+
+            bpy.context.scene.frame_set(current_frame)
 
         return {'FINISHED'}
 
