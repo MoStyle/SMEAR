@@ -9,11 +9,15 @@ The system is developed as part of the [MoStyle ANR Project](https://mostyle.git
 
 ### Latest
 
-**[V1.1](https://github.com/MoStyle/SMEAR/releases/tag/v1_1)**: Updated add-on for Blender 4.2.0 LTS, with improved UI and simplified multiple effects application.
+**[V1.1.5](https://github.com/MoStyle/SMEAR/releases/tag/v1_1_5)**: Various fixes from github issues
 
 ### Older
 
 **[V1.0](https://github.com/MoStyle/SMEAR/releases/tag/v1_0)**: SMEAR add-on used in the paper [SMEAR: Stylized Motion Exaggeration with ARt-direction](https://hal.science/hal-04576817v1/document). Jean Basset, Pierre Bénard, Pascal Barla. Siggraph 2024 Conference Papers
+
+### Public Blender Add-on
+
+[https://extensions.blender.org/add-ons/smear/](https://extensions.blender.org/add-ons/smear/)
 
 ## Installation and Use
 
@@ -26,6 +30,10 @@ Installation instructions:
 - Open Blender and go to Edit->Preferences->Add-ons
 - Click Install... and select the .zip file
 - An add-on named Animation: Smear should appear in the list, click the checkbox to enable it
+
+Or directly in Blender:
+- go to Edit->Preferences->Get Extensions
+- search "SMEAR" and install from Blender's extension tool
 
 ### Minimal example
 
