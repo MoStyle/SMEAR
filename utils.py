@@ -187,7 +187,7 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 			verts_temp += offset
 			anim_vertices[frame] = verts_temp
 
-			if camera_coord:
+			if bpy.context.scene.camera != None and camera_coord:
 				camera = bpy.context.scene.camera
 				for i in range(len(anim_vertices[frame])):
 					anim_vertices[frame][i] -= camera.location

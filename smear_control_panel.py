@@ -66,7 +66,8 @@ class SmearControlPanel(Panel,bpy.types.Panel):
         col.label(text="Temporal smoothing window:")
         col.prop(scene.smear,"smoothWindow")
 
-        col.prop(scene.smear,"cameraPOV")
+        if bpy.context.scene.camera != None:
+            col.prop(scene.smear,"cameraPOV")
 
         col.operator(BakeDeltasTrajectoriesOperator.bl_idname)
 
@@ -226,10 +227,11 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
                 frame_start = keyframe_frames[0]
                 frame_end = keyframe_frames[-1]
 
-            keyframe_frames = get_keyframe_frames(bpy.context.scene.camera)
-            if len(keyframe_frames) > 0:
-                frame_start = min(keyframe_frames[0],frame_start)
-                frame_end = max(keyframe_frames[-1], frame_end)
+            if bpy.context.scene.camera != None:
+                keyframe_frames = get_keyframe_frames(bpy.context.scene.camera)
+                if len(keyframe_frames) > 0:
+                    frame_start = min(keyframe_frames[0],frame_start)
+                    frame_end = max(keyframe_frames[-1], frame_end)
 
             bones_to_discard = []
             if armature != None and scene.smear.discardedBone != "":

@@ -35,11 +35,13 @@ def get_animation_deltas_ribbon(obj,original_anim_vertices,original_anim_joints,
 		frame_start = keyframe_frames[0]
 		frame_end = keyframe_frames[-1]
 
-	print(camera.type)
-	keyframe_frames = get_keyframe_frames(camera)
-	if len(keyframe_frames) > 0:
-		frame_start = min(keyframe_frames[0],frame_start)
-		frame_end = max(keyframe_frames[-1], frame_end)
+	if camera != None:
+		keyframe_frames = get_keyframe_frames(camera)
+		if len(keyframe_frames) > 0:
+			frame_start = min(keyframe_frames[0],frame_start)
+			frame_end = max(keyframe_frames[-1], frame_end)
+	else:
+		camera_coord = False
 
 	faces = [[x_id for x_id in obj.data.polygons[i].vertices] for i in range(len(obj.data.polygons))]
 
