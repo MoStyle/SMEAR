@@ -159,7 +159,8 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 	for mod_name in mods_to_remove:
 		obj_copy.modifiers.remove(obj_copy.modifiers[mod_name])
 	
-	col = obj.users_collection[0]
+	col = bpy.data.collections.new("SMEAR_TEMP_COLLECTION")
+	bpy.context.scene.collection.children.link(col)
 	col.objects.link(obj_copy)
 
 	wm = bpy.context.window_manager
@@ -220,6 +221,7 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 
 		objs = bpy.data.objects
 		objs.remove(objs[obj_copy.name],do_unlink=True)
+		bpy.data.collections.remove(col, do_unlink=True)
 		
 		raise error
 	
@@ -227,6 +229,7 @@ def get_anim_vertices_and_joints(obj,frame_start,frame_end,bones_to_discard,came
 
 	objs = bpy.data.objects
 	objs.remove(objs[obj_copy.name],do_unlink=True)
+	bpy.data.collections.remove(col, do_unlink=True)
 
 	return anim_vertices, anim_joints
 

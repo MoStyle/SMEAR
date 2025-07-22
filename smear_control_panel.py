@@ -69,6 +69,8 @@ class SmearControlPanel(Panel,bpy.types.Panel):
         if bpy.context.scene.camera != None:
             col.prop(scene.smear,"cameraPOV")
 
+        col.operator(UnbakeSmearOperator.bl_idname)
+
         col.operator(BakeDeltasTrajectoriesOperator.bl_idname)
 
 class EffectControlPanel(Panel,bpy.types.Panel):
@@ -178,6 +180,30 @@ def clear_attributes(obj):
     for name in to_remove:
         obj.data.attributes.remove(obj.data.attributes[name])
 
+class UnbakeSmearOperator(bpy.types.Operator):
+    bl_idname = "scene.unbake_smear"
+    bl_label = "Unbake Smears"
+
+    def execute(self,context):
+        obj = bpy.context.active_object
+
+        # unlink node network
+        if "Smear Control Panel" in obj.modifiers:
+            obj.modifiers.remove(obj.modifiers.get("Smear Control Panel"))
+
+        # remove all "delta_X" attributes
+        att_names = [att.name for att in obj.data.attributes]
+        for att_name in att_names:
+            if att_name.startswith("delta_"):
+                att = obj.data.attributes[att_name]
+                obj.data.attributes.remove(att)
+        
+        # delete aggregated animation
+        if f"aggregated_animation_{obj.name}" in bpy.data.objects:
+            bpy.data.objects.remove(bpy.data.objects[f"aggregated_animation_{obj.name}"])
+
+        return {"FINISHED"}
+
 class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
     bl_idname = "scene.bake_deltas_and_trajectories"
     bl_label = "Bake Smears"
@@ -226,6 +252,9 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             if len(keyframe_frames) > 0:
                 frame_start = keyframe_frames[0]
                 frame_end = keyframe_frames[-1]
+            else:
+                print("No animation found")
+                return {"FINISHED"}
 
             if bpy.context.scene.camera != None:
                 keyframe_frames = get_keyframe_frames(bpy.context.scene.camera)
@@ -245,7 +274,8 @@ class BakeDeltasTrajectoriesOperator(bpy.types.Operator):
             for frame in animation_deltas:
                 dname = f"delta_{frame}"
                 obj.data.attributes.new(name=dname,type="FLOAT",domain="POINT")
-                obj.data.attributes[dname].data.foreach_set("value",animation_deltas[frame])
+                for i in range(len(animation_deltas[frame])):
+                    setattr(obj.data.attributes[dname].data[i],"value",animation_deltas[frame][i])
 
 
             pos_aggregated = np.concatenate([positions[frame] for frame in positions])
@@ -327,6 +357,9 @@ def set_node_tree(obj,frame_start,frame_end,cameraPOV):
     camera_identifier = mod.node_group.interface.items_tree["Camera"].identifier
     mod[camera_identifier] = bpy.context.scene.camera
 
+    manual_weights_group_identifier = mod.node_group.interface.items_tree["Manual Weights Group"].identifier
+    bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name = manual_weights_group_identifier, modifier_name = "Smear Control Panel")
+
 class SmearPropertyGroup(bpy.types.PropertyGroup):
     fullBody: bpy.props.BoolProperty(name="Ignore Skeleton",default=False)
     discardedBone: bpy.props.StringProperty(name="Bones",search=get_bone_names)
@@ -339,6 +372,7 @@ def register():
 
     bpy.utils.register_class(SmearControlPanel)
     bpy.utils.register_class(BakeDeltasTrajectoriesOperator)
+    bpy.utils.register_class(UnbakeSmearOperator)
 
     bpy.utils.register_class(ElongatedInbetweensControlPanel)
     bpy.utils.register_class(MotionLinesControlPanel)
@@ -350,6 +384,7 @@ def unregister():
 
     bpy.utils.unregister_class(SmearControlPanel)
     bpy.utils.unregister_class(BakeDeltasTrajectoriesOperator)
+    bpy.utils.unregister_class(UnbakeSmearOperator)
 
     bpy.utils.unregister_class(ElongatedInbetweensControlPanel)
     bpy.utils.unregister_class(MotionLinesControlPanel)
