@@ -243,16 +243,19 @@ def get_keyframe_frames(obj):
 	keyframe_frames = []
 	if obj.type in ['MESH','ARMATURE','CAMERA']:
 		if obj.animation_data and obj.animation_data.action:
-			for fc in obj.animation_data.action.fcurves :
-				if fc.data_path.endswith(('location','rotation_euler','rotation_quaternion','scale')):
-					for key in fc.keyframe_points :
-						keyframe_frames.append(int(key.co[0]))
-
-		if obj.data.animation_data and obj.data.animation_data.action:
-			for fc in obj.data.animation_data.action.fcurves :
-				if fc.data_path.endswith(('location','rotation_euler','rotation_quaternion','scale','co')):
-					for key in fc.keyframe_points :
-						keyframe_frames.append(int(key.co[0]))
+			if bpy.app.version >= (5,0,0):
+				action = obj.animation_data.action
+				fcurves = action.layers[0].strips[0].channelbag(action.slots[0]).fcurves
+				for fc in fcurves :
+					if fc.data_path.endswith(('location','rotation_euler','rotation_quaternion','scale','co')):
+						for key in fc.keyframe_points :
+							keyframe_frames.append(int(key.co[0]))
+							
+			else: # Old access to fcurves, deprecated in 5.0
+				for fc in obj.animation_data.action.fcurves :
+					if fc.data_path.endswith(('location','rotation_euler','rotation_quaternion','scale')):
+						for key in fc.keyframe_points :
+							keyframe_frames.append(int(key.co[0]))
 
 	if obj.parent != None:
 		keyframe_frames += get_keyframe_frames(obj.parent)
